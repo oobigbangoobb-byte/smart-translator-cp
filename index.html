@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Translator CP – Web (No-AI-Cost Backend)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #e9e4d8;
+      --book-bg: #dcd2c4;
+      --page-bg: #fdfaf4;
+      --spine: #c4b9a4;
+      --accent: #7b6953;
+      --border: #c9bda8;
+      --text-main: #333;
+      --text-muted: #666;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.12);
+      --radius-lg: 18px;
+      --radius-page: 14px;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #f5efe4, #d7d0c4);
+      font-family: var(--font-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .app-root {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .app-header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .title-row h1 {
+      font-size: 1.4rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      margin: 0;
+      color: #3b3125;
+      text-transform: uppercase;
+    }
+    .title-tagline {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      background: rgba(255,255,255,0.55);
+      border-radius: var(--radius-lg);
+      padding: 10px 12px;
+      border: 1px solid rgba(201,189,168,0.7);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+    .lang-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .lang-group label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+    .lang-select {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(180,166,142,0.9);
+      background: #f8f4ec;
+      font-size: 0.85rem;
+      min-width: 150px;
+      outline: none;
+    }
+    .button-primary, .button-ghost {
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.86rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease-out;
+      white-space: nowrap;
+    }
+    .button-primary {
+      background: linear-gradient(135deg,#7b6953,#9c8465);
+      color: #fff;
+      border-color: rgba(82,66,45,0.85);
+      box-shadow: 0 8px 18px rgba(82,66,45,0.35);
+    }
+    .button-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 11px 24px rgba(82,66,45,0.4);
+      filter: brightness(1.04);
+    }
+    .button-primary:disabled {
+      opacity: 0.6;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+    .button-ghost {
+      background: transparent;
+      border-color: rgba(123,105,83,0.55);
+      color: #5a4934;
+    }
+    .button-ghost:hover {
+      background: rgba(123,105,83,0.08);
+    }
+    .top-bar-spacer {
+      flex: 1;
+    }
+    .ad-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ad-box {
+      flex: 1;
+      min-width: 140px;
+      min-height: 60px;
+      background: #f6f0e6;
+      border-radius: 10px;
+      border: 1px dashed rgba(139,122,100,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      color: #8b7a64;
+    }
+    .book-shell {
+      margin-top: 10px;
+      background: var(--book-bg);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(170,156,134,0.8);
+    }
+    .book-inner {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 4px minmax(0,1fr);
+      gap: 0;
+      background: #f5f0e6;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 380px;
+    }
+    .spine {
+      background: var(--spine);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+    .page {
+      background: radial-gradient(circle at top,#ffffff,var(--page-bg));
+      padding: 12px 12px 14px;
+      border-left: 1px solid rgba(255,255,255,0.8);
+      border-right: 1px solid rgba(201,189,168,0.7);
+      display: flex;
+      flex-direction: column;
+    }
+    .page-left {
+      border-radius: var(--radius-page) 0 0 var(--radius-page);
+      box-shadow: inset -6px 0 10px rgba(0,0,0,0.03);
+    }
+    .page-right {
+      border-radius: 0 var(--radius-page) var(--radius-page) 0;
+      box-shadow: inset 6px 0 10px rgba(0,0,0,0.03);
+    }
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .page-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #8c7b68;
+    }
+    .page-subtle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    textarea {
+      flex: 1;
+      border: none;
+      resize: none;
+      outline: none;
+      background: transparent;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.94rem;
+      color: #2a2520;
+      line-height: 1.55;
+      padding: 8px 10px 6px;
+      border-radius: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: #c4b9a4 transparent;
+    }
+    textarea::placeholder { color: rgba(140,123,104,0.6); }
+    textarea:focus {
+      box-shadow: 0 0 0 1px rgba(123,105,83,0.4);
+      background: rgba(255,255,255,0.65);
+    }
+    .status-row {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      margin-right: 6px;
+      background: #8f8f8f;
+    }
+    .status-dot.active {
+      background: #2fa86b;
+      box-shadow: 0 0 0 5px rgba(47,168,107,0.15);
+    }
+    .status-dot.busy {
+      background: #c58a34;
+      box-shadow: 0 0 0 5px rgba(197,138,52,0.18);
+    }
+    .status-right {
+      font-size: 0.78rem;
+      color: #8b7a64;
+    }
+    .bottom-ads {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 900px) {
+      .book-inner {
+        grid-template-columns: minmax(0,1fr);
+      }
+      .spine { display:none; }
+      .page-left, .page-right {
+        border-radius: 0;
+        border-left:none;
+        border-right:none;
+        box-shadow:none;
+      }
+      .page-right { border-top:1px solid rgba(201,189,168,0.7); }
+    }
+    @media (max-width: 600px) {
+      .top-bar { flex-direction: column; align-items: stretch; }
+      .lang-group { justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-root">
+    <header class="app-header">
+      <div class="title-row">
+        <h1>Smart Translator CP</h1>
+        <div class="title-tagline">Calm dual-page translator with server-side free model</div>
+      </div>
+      <div class="top-bar">
+        <div class="lang-group">
+          <label>From</label>
+          <select id="sourceLang" class="lang-select"></select>
+          <label>To</label>
+          <select id="targetLang" class="lang-select"></select>
+          <button id="swapBtn" class="button-ghost" type="button">Swap</button>
+          <button id="translateBtn" class="button-primary" type="button">Translate</button>
+        </div>
+        <div class="top-bar-spacer"></div>
+        <div class="ad-strip">
+          <div class="ad-box">
+            <!-- Ad slot 1 (top-right) -->
+            TOP AD 1 (paste AdSense script here)
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="book-shell">
+      <section class="book-inner">
+        <article class="page page-left">
+          <div class="page-header">
+            <div class="page-title">Input Text</div>
+            <div class="page-subtle" id="sourceLangLabel"></div>
+          </div>
+          <textarea id="inputText" placeholder="Type or paste text here..."></textarea>
+        </article>
+        <div class="spine"></div>
+        <article class="page page-right">
+          <div class="page-header">
+            <div class="page-title">Translated Text</div>
+            <div class="page-subtle" id="targetLangLabel"></div>
+          </div>
+          <textarea id="outputText" readonly placeholder="Translation will appear here..."></textarea>
+        </article>
+      </section>
+
+      <div class="status-row">
+        <div>
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText">Idle.</span>
+        </div>
+        <div class="status-right">Backend: MarianMT (server-side, no per-user token cost)</div>
+      </div>
+
+      <div class="bottom-ads">
+        <div class="ad-box">
+          <!-- Bottom Ad 1 -->
+          BOTTOM AD 1 (paste script)
+        </div>
+        <div class="ad-box">
+          <!-- Bottom Ad 2 -->
+          BOTTOM AD 2 (paste script)
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const BACKEND_URL = "http://localhost:8000"; // change to your server URL in production
+
+    const languages = [
+      { label: "English", code: "en" },
+      { label: "Greek", code: "el" },
+      { label: "Spanish", code: "es" },
+      { label: "Italian", code: "it" },
+      { label: "Arabic", code: "ar" },
+      { label: "Russian", code: "ru" },
+      { label: "Ukrainian", code: "uk" },
+      { label: "Japanese", code: "ja" },
+      { label: "Chinese", code: "zh" },
+    ];
+
+    const sourceSelect = document.getElementById("sourceLang");
+    const targetSelect = document.getElementById("targetLang");
+    const sourceLabel = document.getElementById("sourceLangLabel");
+    const targetLabel = document.getElementById("targetLangLabel");
+    const inputText = document.getElementById("inputText");
+    const outputText = document.getElementById("outputText");
+    const translateBtn = document.getElementById("translateBtn");
+    const swapBtn = document.getElementById("swapBtn");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+
+    function initLanguages() {
+      languages.forEach(lang => {
+        const optSrc = document.createElement("option");
+        optSrc.value = lang.code;
+        optSrc.textContent = lang.label;
+        sourceSelect.appendChild(optSrc);
+
+        const optTgt = document.createElement("option");
+        optTgt.value = lang.code;
+        optTgt.textContent = lang.label;
+        targetSelect.appendChild(optTgt);
+      });
+      sourceSelect.value = "en";
+      targetSelect.value = "el";
+      updateLangLabels();
+    }
+
+    function updateLangLabels() {
+      const src = sourceSelect.options[sourceSelect.selectedIndex]?.text || "";
+      const tgt = targetSelect.options[targetSelect.selectedIndex]?.text || "";
+      sourceLabel.textContent = src || "Source";
+      targetLabel.textContent = tgt || "Target";
+    }
+
+    function setStatusIdle(msg = "Idle.") {
+      statusDot.classList.remove("busy");
+      statusDot.classList.add("active");
+      statusText.textContent = msg;
+    }
+    function setStatusBusy(msg = "Translating...") {
+      statusDot.classList.remove("active");
+      statusDot.classList.add("busy");
+      statusText.textContent = msg;
+    }
+    function setStatusError(msg) {
+      statusDot.classList.remove("active", "busy");
+      statusDot.style.background = "#c0493d";
+      statusDot.style.boxShadow = "0 0 0 5px rgba(192,73,61,0.2)";
+      statusText.textContent = msg;
+    }
+
+    async function doTranslate() {
+      const text = inputText.value.trim();
+      if (!text) {
+        alert("Please enter some text to translate.");
+        return;
+      }
+      const src = sourceSelect.value;
+      const tgt = targetSelect.value;
+      if (src === tgt) {
+        outputText.value = text;
+        setStatusIdle("Source and target are the same.");
+        return;
+      }
+
+      translateBtn.disabled = true;
+      swapBtn.disabled = true;
+      setStatusBusy("Translating via backend...");
+
+      try {
+        const res = await fetch(BACKEND_URL + "/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            source_lang: src,
+            target_lang: tgt,
+          }),
+        });
+        if (!res.ok) {
+          const t = await res.text();
+          console.error("Backend error:", t);
+          setStatusError("Backend error: " + res.status);
+        } else {
+          const data = await res.json();
+          outputText.value = data.translated_text || "";
+          setStatusIdle("Done.");
+        }
+      } catch (err) {
+        console.error(err);
+        setStatusError("Network error.");
+      } finally {
+        translateBtn.disabled = false;
+        swapBtn.disabled = false;
+      }
+    }
+
+    translateBtn.addEventListener("click", () => doTranslate());
+    swapBtn.addEventListener("click", () => {
+      const oldSrc = sourceSelect.value;
+      const oldTgt = targetSelect.value;
+      sourceSelect.value = oldTgt;
+      targetSelect.value = oldSrc;
+      updateLangLabels();
+
+      const inVal = inputText.value;
+      const outVal = outputText.value;
+      inputText.value = outVal;
+      outputText.value = inVal;
+    });
+    inputText.addEventListener("keydown", e => {
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        doTranslate();
+      }
+    });
+
+    initLanguages();
+    setStatusIdle();
+  </script>
+</body>
+</html>
